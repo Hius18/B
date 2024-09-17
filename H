@@ -1,0 +1,72 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local flying = false
+local flightSpeed = 50 -- Điều chỉnh tốc độ bay nếu cần
+
+-- Hàm điều khiển bay
+local function toggleFly()
+    flying = not flying
+    character.Humanoid.PlatformStand = flying
+
+    if flying then
+        while flying do
+            wait(0.1)
+            local direction = Vector3.new(0, 0, 0)
+            if character:FindFirstChild("HumanoidRootPart") then
+                local userInputService = game:GetService("UserInputService")
+                direction = Vector3.new(
+                    userInputService:IsKeyDown(Enum.KeyCode.W) and 1 or userInputService:IsKeyDown(Enum.KeyCode.S) and -1 or 0,
+                    userInputService:IsKeyDown(Enum.KeyCode.Space) and 1 or userInputService:IsKeyDown(Enum.KeyCode.LeftControl) and -1 or 0,
+                    userInputService:IsKeyDown(Enum.KeyCode.A) and -1 or userInputService:IsKeyDown(Enum.KeyCode.D) and 1 or 0
+                )
+                hrp.Velocity = hrp.CFrame.LookVector * flightSpeed * direction.Z + hrp.CFrame.RightVector * flightSpeed * direction.X + Vector3.new(0, flightSpeed * direction.Y, 0)
+            end
+        end
+    else
+        hrp.Velocity = Vector3.new(0, 0, 0)
+    end
+end
+
+-- Gán phím tắt để bật/tắt chế độ bay
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        toggleFly()
+    end
+end)
+
+-- Hàm farm tài nguyên
+local function farmResources()
+    while true do
+        wait(1)
+        for _, resource in pairs(game.Workspace.Resources:GetChildren()) do
+            if resource:FindFirstChild("TouchInterest") then
+                hrp.CFrame = resource.CFrame
+                wait(0.1)
+            end
+        end
+    end
+end
+
+-- Hàm tìm và đánh Windy Bee
+local function findAndFightWindyBee()
+    while true do
+        wait(1)
+for _, bee in pairs(game.Workspace.Bees:GetChildren()) do
+            if bee.Name == "Windy Bee" then
+                hrp.CFrame = bee.CFrame * CFrame.new(0, 0, -5)
+                repeat
+                    wait(0.1)
+                    if bee:FindFirstChild("Humanoid") then
+                        bee.Humanoid.Health = 0
+                    end
+                until not bee:FindFirstChild("Humanoid") or bee.Humanoid.Health <= 0
+            end
+        end
+    end
+end
+
+-- Bắt đầu farm và săn Windy Bee
+toggleFly() -- Bật chế độ bay trước
+spawn(farmResources) -- Chạy farm tài nguyên song song
+spawn(findAndFightWindyBee) -- Tìm và đánh Windy Bee song song
